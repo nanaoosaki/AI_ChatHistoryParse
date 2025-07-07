@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Cloudflare Worker backend
+  worker:
+    build: .
+    ports:
+      - "8787:8787"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: ["wrangler", "dev", "--port", "8787", "--host", "0.0.0.0"]
+    environment:
+      - NODE_ENV=development
+    networks:
+      - chat-archive-network
+
+  # Static file server for frontend
+  frontend:
+    image: node:18-alpine
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./public:/app/public
+    working_dir: /app
+    command: ["npx", "http-server", "public", "-p", "5173", "-a", "0.0.0.0", "--cors"]
+    depends_on:
+      - worker
+    networks:
+      - chat-archive-network
+
+networks:
+  chat-archive-network:
+    driver: bridge
+

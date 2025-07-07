@@ -1,0 +1,10 @@
+name = "chat-archive-mvp"
+main = "src/index.js"
+compatibility_date = "2023-12-01"
+
+[env.development]
+name = "chat-archive-mvp-dev"
+
+[[env.development.vars]]
+OPENAI_API_KEY = "TEST"
+
