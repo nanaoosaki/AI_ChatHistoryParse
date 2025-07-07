@@ -1,16 +1,16 @@
 {
   "name": "chat-archive-mvp",
   "version": "1.0.0",
-  "description": "Chat Archive MVP with Cloudflare Worker backend",
-  "main": "src/index.js",
+  "description": "Chat Archive MVP with client-side logic for GitHub Pages",
+  "main": "public/app.js",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "build": "mkdir -p dist && cp public/* dist/",
+    "preview": "npx serve dist"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "serve": "^14.0.1"
   },
-  "keywords": ["cloudflare", "worker", "chat", "archive"],
+  "keywords": ["github-pages", "static", "chat", "archive"],
   "author": "",
   "license": "MIT"
 }

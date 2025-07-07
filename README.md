@@ -1,161 +1,73 @@
-# Chat Archive MVP
+# Chat Archive MVP (Static GitHub Pages Version)
 
-A minimal viable product for chat archiving with Cloudflare Worker backend and plain HTML frontend.
+A minimal viable product for chat archiving with client-side logic, ready for deployment on GitHub Pages.
 
 ## Features
 
-- **POST /ingest**: Accept URL or file upload, return messages JSON
-- **POST /summarise**: Accept messages JSON, return summary and sources
-- **POST /chat**: Accept conversation ID and question, return stubbed answer
-- Frontend with two download buttons for messages and summary
-- Docker setup for local development
+- **Client-side logic**: All operations (ingest, summarise, chat) run in the browser.
+- **Stubbed API**: Uses `apiStub.js` to simulate backend responses.
+- **Ready for wiring**: Exposes `window.API` for easy integration with a real backend.
+- **Static build**: Simple build process for static hosting.
 
 ## Stack
 
-- **Backend**: Cloudflare Worker (Edge runtime)
 - **Frontend**: Plain HTML + JavaScript + Tailwind CSS
-- **Development**: Docker + docker-compose
+- **API**: Client-side stubs (`apiStub.js`)
 
 ## Quick Start
 
-1. **Clone and run**:
+1. **Build and preview**:
    ```bash
-   unzip chat-archive-mvp.zip
-   cd chat-archive-mvp
-   docker compose up
+   npm i && npm run build && npx serve dist
    ```
 
 2. **Access the application**:
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:8787
+   - Open your browser to the URL provided by `npx serve` (usually http://localhost:3000).
 
-## API Endpoints
+## API Stubs
 
-### POST /ingest
-Accept URL or file upload and return extracted messages.
+The application uses client-side stubs to simulate API calls. These can be found in `public/apiStub.js`.
 
-**Request (URL)**:
-```json
-{
-  "url": "https://example.com/chat-export"
-}
-```
-
-**Request (File Upload)**:
-```
-Content-Type: multipart/form-data
-file: [uploaded file]
-```
-
-**Response**:
-```json
-{
-  "messages": [
-    {
-      "id": 1,
-      "timestamp": "2023-12-01T10:00:00Z",
-      "sender": "user1",
-      "content": "Message content",
-      "type": "text"
-    }
-  ]
-}
-```
-
-### POST /summarise
-Generate summary from messages.
-
-**Request**:
-```json
-{
-  "messages": [/* array of message objects */]
-}
-```
-
-**Response**:
-```json
-{
-  "summary": "Generated summary text",
-  "sources": [
-    {
-      "id": 1,
-      "sender": "user1",
-      "timestamp": "2023-12-01T10:00:00Z",
-      "snippet": "Message snippet..."
-    }
-  ]
-}
-```
-
-### POST /chat
-Ask questions about the conversation.
-
-**Request**:
-```json
-{
-  "conversation_id": "conv_123",
-  "question": "What was discussed?"
-}
-```
-
-**Response**:
-```json
-{
-  "response": "This is a stub answer.",
-  "conversation_id": "conv_123",
-  "timestamp": "2023-12-01T10:00:00Z"
-}
-```
+- `ingest()`: Simulates ingesting messages from a URL or file.
+- `summarise()`: Generates a stubbed summary of messages.
+- `chat()`: Returns a stubbed chat response.
 
 ## Development
 
-### Local Development without Docker
+### Local Development
 
 1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-2. **Start Cloudflare Worker**:
+2. **Start a development server**:
    ```bash
-   npm run dev
-   ```
-
-3. **Serve frontend** (in another terminal):
-   ```bash
-   npx http-server public -p 5173 --cors
+   npx serve public
    ```
 
 ### Project Structure
 
 ```
 chat-archive-mvp/
-├── src/
-│   └── index.js          # Cloudflare Worker script
 ├── public/
 │   ├── index.html        # Frontend HTML
-│   └── app.js           # Frontend JavaScript
+│   ├── app.js            # Frontend JavaScript
+│   └── apiStub.js        # Client-side API stubs
 ├── package.json         # Node.js dependencies
-├── wrangler.toml        # Cloudflare Worker config
-├── Dockerfile           # Docker configuration
-├── docker-compose.yml   # Docker Compose setup
-└── README.md           # This file
+└── README.md            # This file
 ```
-
-## Notes
-
-- **No real API keys**: Uses placeholder `OPENAI_API_KEY = "TEST"`
-- **Stubbed responses**: All LLM calls are mocked for demonstration
-- **CORS enabled**: Frontend can communicate with backend
-- **Edge runtime**: Designed for Cloudflare Workers deployment
 
 ## Deployment
 
-To deploy to Cloudflare Workers:
+This project is designed for static hosting platforms like GitHub Pages.
 
-```bash
-npm run deploy
-```
+1. **Build the project**:
+   ```bash
+   npm run build
+   ```
 
-Make sure to configure your Cloudflare account and update `wrangler.toml` with your account details.
+2. **Deploy the `dist` directory** to your hosting provider.
+
+For GitHub Pages, you can push the contents of the `dist` directory to a `gh-pages` branch.
 

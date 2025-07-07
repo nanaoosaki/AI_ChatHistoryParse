@@ -1,12 +1,19 @@
 // Chat Archive MVP Frontend JavaScript
 
-// Configuration
-const API_BASE_URL = 'http://localhost:8787'; // Cloudflare Worker dev server default port
+import { ingest, summarise, chat } from './apiStub.js';
+
+// Expose API stubs globally for later wiring
+window.API = {
+    ingest,
+    summarise,
+    chat
+};
 
 // Global state
 let currentMessages = null;
 let currentSummary = null;
 let conversationId = generateConversationId();
+let chatHistory = []; // To store chat messages
 
 // Generate a unique conversation ID
 function generateConversationId() {
@@ -18,12 +25,12 @@ function showStatus(message, type = 'info') {
     const statusEl = document.getElementById('statusMessage');
     statusEl.textContent = message;
     statusEl.className = `fixed bottom-4 right-4 px-4 py-2 rounded-md text-white ${
-        type === 'error' ? 'bg-red-500' : 
-        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' :
+        type === 'success' ? 'bg-green-500' :
         'bg-blue-500'
     }`;
     statusEl.classList.remove('hidden');
-    
+
     setTimeout(() => {
         statusEl.classList.add('hidden');
     }, 3000);
@@ -62,35 +69,23 @@ function downloadJSON(data, filename) {
 async function ingestFromUrl() {
     const urlInput = document.getElementById('urlInput');
     const url = urlInput.value.trim();
-    
+
     if (!url) {
         showStatus('Please enter a URL', 'error');
         return;
     }
-    
+
     setLoading('urlBtn', true);
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/ingest`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await window.API.ingest({ url });
         currentMessages = data.messages;
-        
+
         displayMessages(data.messages);
         enableButton('summarizeBtn');
         enableButton('downloadMessagesBtn');
         showStatus('Successfully ingested messages from URL', 'success');
-        
+
     } catch (error) {
         console.error('Error ingesting from URL:', error);
         showStatus('Error ingesting from URL: ' + error.message, 'error');
@@ -103,35 +98,23 @@ async function ingestFromUrl() {
 async function ingestFromFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
-    
+
     if (!file) {
         showStatus('Please select a file', 'error');
         return;
     }
-    
+
     setLoading('fileBtn', true);
-    
+
     try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response = await fetch(`${API_BASE_URL}/ingest`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await window.API.ingest({ file });
         currentMessages = data.messages;
-        
+
         displayMessages(data.messages);
         enableButton('summarizeBtn');
         enableButton('downloadMessagesBtn');
         showStatus('Successfully ingested messages from file', 'success');
-        
+
     } catch (error) {
         console.error('Error ingesting from file:', error);
         showStatus('Error ingesting from file: ' + error.message, 'error');
@@ -146,29 +129,17 @@ async function summarizeMessages() {
         showStatus('No messages to summarize', 'error');
         return;
     }
-    
+
     setLoading('summarizeBtn', true);
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/summarise`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ messages: currentMessages })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await window.API.summarise(currentMessages);
         currentSummary = data;
-        
+
         displaySummary(data);
         enableButton('downloadSummaryBtn');
         showStatus('Successfully generated summary', 'success');
-        
+
     } catch (error) {
         console.error('Error summarizing messages:', error);
         showStatus('Error summarizing messages: ' + error.message, 'error');
@@ -181,36 +152,28 @@ async function summarizeMessages() {
 async function askQuestion() {
     const questionInput = document.getElementById('questionInput');
     const question = questionInput.value.trim();
-    
+
     if (!question) {
         showStatus('Please enter a question', 'error');
         return;
     }
-    
+
     setLoading('chatBtn', true);
-    
+
+    // Add user question to chat history
+    chatHistory.push({ type: 'user', content: question, timestamp: new Date().toISOString() });
+    renderChatHistory();
+
     try {
-        const response = await fetch(`${API_BASE_URL}/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                conversation_id: conversationId,
-                question 
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        displayChatResponse(question, data.response);
+        const data = await window.API.chat(conversationId, question);
+
+        // Add AI response to chat history
+        chatHistory.push({ type: 'ai', content: data.response, timestamp: new Date().toISOString() });
+        renderChatHistory();
+
         questionInput.value = '';
         showStatus('Question answered', 'success');
-        
+
     } catch (error) {
         console.error('Error asking question:', error);
         showStatus('Error asking question: ' + error.message, 'error');
@@ -224,14 +187,14 @@ async function askQuestion() {
 function displayMessages(messages) {
     const resultsEl = document.getElementById('ingestResults');
     const displayEl = document.getElementById('messagesDisplay');
-    
+
     displayEl.innerHTML = messages.map(msg => `
         <div class="border-b border-gray-200 pb-2 mb-2">
             <div class="font-medium">${msg.sender} - ${new Date(msg.timestamp).toLocaleString()}</div>
             <div class="text-gray-600">${msg.content}</div>
         </div>
     `).join('');
-    
+
     resultsEl.classList.remove('hidden');
 }
 
@@ -239,31 +202,30 @@ function displaySummary(data) {
     const resultsEl = document.getElementById('summaryResults');
     const summaryEl = document.getElementById('summaryDisplay');
     const sourcesEl = document.getElementById('sourcesDisplay');
-    
+
     summaryEl.textContent = data.summary;
-    
+
     sourcesEl.innerHTML = data.sources.map(source => `
         <div class="border-b border-gray-200 pb-2 mb-2">
             <div class="font-medium">${source.sender} - ${new Date(source.timestamp).toLocaleString()}</div>
             <div class="text-gray-600">${source.snippet}</div>
         </div>
     `).join('');
-    
+
     resultsEl.classList.remove('hidden');
 }
 
-function displayChatResponse(question, response) {
-    const resultsEl = document.getElementById('chatResults');
-    
-    const chatItem = document.createElement('div');
-    chatItem.className = 'border border-gray-200 rounded-md p-3';
-    chatItem.innerHTML = `
-        <div class="font-medium text-blue-600 mb-1">Q: ${question}</div>
-        <div class="text-gray-700">A: ${response}</div>
-        <div class="text-xs text-gray-500 mt-1">${new Date().toLocaleString()}</div>
-    `;
-    
-    resultsEl.appendChild(chatItem);
+function renderChatHistory() {
+    const chatHistoryEl = document.getElementById('chatHistory');
+    chatHistoryEl.innerHTML = chatHistory.map(msg => `
+        <div class="${msg.type === 'user' ? 'bg-blue-600 text-white self-end' : 'bg-gray-600 text-white self-start'} p-3 rounded-lg max-w-[80%]">
+            <div class="font-medium mb-1">${msg.type === 'user' ? 'You' : 'AI'}</div>
+            <div>${msg.content}</div>
+            <div class="text-xs opacity-75 mt-1">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+        </div>
+    `).join('');
+    // Scroll to the bottom
+    chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
 }
 
 // Download Functions
@@ -273,7 +235,7 @@ function downloadMessages() {
         showStatus('No messages to download', 'error');
         return;
     }
-    
+
     downloadJSON(currentMessages, 'chat-messages.json');
     showStatus('Messages downloaded', 'success');
 }
@@ -283,7 +245,7 @@ function downloadSummary() {
         showStatus('No summary to download', 'error');
         return;
     }
-    
+
     downloadJSON(currentSummary, 'chat-summary.json');
     showStatus('Summary downloaded', 'success');
 }
@@ -306,4 +268,5 @@ document.getElementById('questionInput').addEventListener('keypress', function(e
 // Initialize
 console.log('Chat Archive MVP loaded');
 console.log('Conversation ID:', conversationId);
+
 
