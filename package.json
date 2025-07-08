@@ -2,10 +2,10 @@
   "name": "chat-archive-mvp",
   "version": "1.0.0",
   "description": "Chat Archive MVP with client-side logic for GitHub Pages",
-  "main": "public/app.js",
+  "main": "app.js",
   "scripts": {
-    "build": "mkdir -p dist && cp public/* dist/",
-    "preview": "npx serve dist"
+    "dev": "npx serve . --cors",
+    "preview": "npx serve . --cors"
   },
   "devDependencies": {
     "serve": "^14.0.1"

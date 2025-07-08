@@ -30,8 +30,7 @@ chat-archive-mvp/
 │   └── docker-compose.yml  # Multi-service orchestration
 ├── Build System
 │   ├── package.json        # Dependencies and scripts
-│   ├── Dockerfile          # Container definition
-│   └── dist/               # Build output directory
+│   └── Dockerfile          # Container definition
 └── Documentation
     └── README.md           # This file
 ```
@@ -318,8 +317,9 @@ Response:
 ```bash
 # Local Static Serving
 npm install           # Install dependencies
-npm run build        # Copy files to dist/
-npx serve dist       # Serve on http://localhost:3000
+npm run dev          # Serve directly from root on http://localhost:3000
+# OR
+npx serve . --cors   # Alternative direct serving
 ```
 
 ### **Docker Containerization**
